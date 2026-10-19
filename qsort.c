@@ -1,75 +1,90 @@
-#include <stdio.h>
-#include <stdlib.h>
+    #include <stdio.h>
+    #include <stdlib.h>
 
-// Estrutura para representar uma palestra no auditório
-typedef struct {
-    char nome[30];
-    int inicio;
-    int fim;
-} Palestra;
+    typedef struct {
+        char id[5];
+        int inicio;
+        int fim;
+    } Atividade;
 
-int compararPalestras(const void *a, const void *b) {
-    Palestra *p1 = (Palestra *)a;
-    Palestra *p2 = (Palestra *)b;
-    
-    if (p1->fim != p2->fim) {
-        return p1->fim - p2->fim; 
+    //recebe dois ponteiros genericos
+    int comparar(const void *a, const void *b) {
+        const Atividade *x = (const Atividade *)a;
+        const Atividade *y = (const Atividade *)b;
+
+        if (x->fim != y->fim)
+            return (x->fim < y->fim) ? -1 : 1;
+        if (x->inicio != y->inicio)
+            return (x->inicio < y->inicio) ? -1 : 1;
+        return 0;
+        
     }
-    return p1->inicio - p2->inicio;
-}
 
-void gerenciarAuditorio(Palestra arr[], int n) {
-    printf("==================================================\n");
-    printf("     GESTAO DE AGENDA DO AUDITORIO (GULOSO)       \n");
-    printf("==================================================\n\n");
+    void selecionar(Atividade arr[], int n) {
+        printf("==================================================\n");
+        printf("EXECUTANDO: Algoritmo Guloso de Selecao de Atividades\n");
+        printf("==================================================\n");
 
-    // Passo 1: Ordenar as palestras pelo horário de término — O(N log N)
-    qsort(arr, n, sizeof(Palestra), compararPalestras);
-
-    printf("Pedidos organizados por horario de termino:\n");
-
-    for (int i = 0; i < n; i++) {
-        printf("  - %s: [%02d:00 as %02d:00]\n", arr[i].nome, arr[i].inicio, arr[i].fim);
-    }
-    printf("\n--- Passo a Passo da Aprovacao ---\n");
-
-    // Passo 2: A primeira palestra ordenada é sempre aprovada
-    int ultimaSelecionada = 0;
-    int totalAprovadas = 1;
-    printf("[APROVADA]  %s (%02d:00 - %02d:00) -> Primeira a liberar o auditorio.\n", 
-           arr[0].nome, arr[0].inicio, arr[0].fim);
-
-    // Passo 3: Percorrer as demais palestras — O(N)
-    for (int j = 1; j < n; j++) {
-        // Se o horário de início da palestra atual for >= ao término da última aceita
-        if (arr[j].inicio >= arr[ultimaSelecionada].fim) {
-            printf("[APROVADA]  %s (%02d:00 - %02d:00) -> Comeca apos o fim de %s (%02d:00).\n", 
-                   arr[j].nome, arr[j].inicio, arr[j].fim, 
-                   arr[ultimaSelecionada].nome, arr[ultimaSelecionada].fim);
-            ultimaSelecionada = j;
-            totalAprovadas++;
-        } else {
-            printf("[REJEITADA] %s (%02d:00 - %02d:00) -> Conflita com %s (ocupa ate %02d:00).\n", 
-                   arr[j].nome, arr[j].inicio, arr[j].fim, 
-                   arr[ultimaSelecionada].nome, arr[ultimaSelecionada].fim);
+        if (n <= 0) {
+            printf("Nenhuma atividade para selecionar.\n");
+            printf("Total de atividades selecionadas: 0\n");
+            return;
         }
+
+        qsort(arr, n, sizeof(Atividade), comparar);
+        printf("Atividades apos ordenacao por termino:\n");
+
+        for (int i = 0; i < n; i++) {
+            printf(" %s: [%d, %d)\n", arr[i].id, arr[i].inicio, arr[i].fim);
+        }
+
+        //pois o primeiro ordenado é o primeiro a ser selecionado
+        int ultimaSelecionada = 0;
+        int totalSelecionadas = 1;
+        printf("\nResultado da selecao:\n");
+        printf(" %s: [%d, %d) - Selecionada\n", arr[ultimaSelecionada].id, arr[ultimaSelecionada].inicio, 
+            arr[ultimaSelecionada].fim);
+
+        for (int j = 1; j < n; j++) {
+            if (arr[j].inicio >= arr[ultimaSelecionada].fim) {
+                ultimaSelecionada = j;
+                totalSelecionadas++;
+                printf(" %s: [%d, %d) - Selecionada\n",
+                    arr[j].id, arr[j].inicio, arr[j].fim);
+            } else {
+                printf(" %s: [%d, %d) - Ignorada\n",
+                    arr[j].id, arr[j].inicio, arr[j].fim);
+            }
+        }
+        
+        printf("\nTotal de atividades selecionadas: %d\n", totalSelecionadas);
     }
 
-    printf("\nTotal maximo de eventos realizados no auditorio: %d\n\n", totalAprovadas);
-}
 
-int main() {
-    // Lista de palestras enviadas para o exemplo do auditório
-    Palestra pedidos[] = {
-        {"Palestra A (RH)", 9, 12},
-        {"Palestra B (Vendas)", 10, 11},
-        {"Palestra C (IA)", 11, 13},     // Ajustado para 11:30 -> 12:30/13:00 (usando inteiros para facilitar)
-        {"Palestra D (Ciberseguranca)", 12, 14},
-        {"Palestra E (Projetos)", 14, 15}
-    };
-    int n = sizeof(pedidos) / sizeof(pedidos[0]);
+    int main(void) {
+        int n;
 
-    gerenciarAuditorio(pedidos, n);
+        if (scanf("%d", &n) != 1 || n < 0) {
+            printf("Entrada invalida.\n");
+            return 1;
+        }
 
-    return 0;
-}
+        Atividade *arr = malloc(n * sizeof(Atividade));
+
+        if (arr == NULL && n > 0) {
+            printf("Erro de memoria.\n");
+            return 1;
+        }
+
+        for (int i = 0; i < n; i++) {
+            if (scanf("%4s %d %d", arr[i].id, &arr[i].inicio, &arr[i].fim) != 3) {
+                printf("Erro ao ler a atividade %d.\n", i + 1);
+                free(arr);
+                return 1;
+            }
+        }
+
+        selecionar(arr, n);
+        free(arr);
+        return 0;
+    }
